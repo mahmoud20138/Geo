@@ -404,12 +404,12 @@ The dashboard is available at `http://localhost:8084/` and includes:
 
 ```mermaid
 graph TD
-    A[Server Startup] --> B[Scan plugins/ directory]
-    A --> C[Scan skills/ directory]
+    A[Server Startup] --> B[Scan plugins directory]
+    A --> C[Scan skills directory]
     A --> D[Load mcp_servers.json]
     A --> E[Initialize RAG]
 
-    B --> F[@register_tool decorated functions]
+    B --> F[Plugin functions]
     C --> G[YAML skill definitions]
     D --> H[MCP server connections]
     E --> I[ChromaDB vector store]
