@@ -122,30 +122,79 @@ Output: {
 
 ## Architecture
 
+### Agent Flow
+
+```mermaid
+graph TD
+    A[User Input] --> B[Supervisor]
+    B -->|Plan needed| C[Planner]
+    B -->|Approved| H[END]
+    C --> D[Executor]
+    D -->|Run tools| E[Tool Layer]
+    D -->|Next step| D
+    D -->|All done| F[Analyst]
+    F -->|Review| B
+
+    E --> E1[Core Tools]
+    E --> E2[Plugin Tools]
+    E --> E3[MCP Tools]
+    E --> E4[RAG Knowledge]
+
+    style B fill:#1e3a5f,stroke:#38bdf8,color:#38bdf8
+    style C fill:#1e2a3a,stroke:#818cf8,color:#818cf8
+    style D fill:#1e3a2f,stroke:#22c55e,color:#22c55e
+    style F fill:#3a2e1e,stroke:#fbbf24,color:#fbbf24
+    style H fill:#052e16,stroke:#22c55e,color:#22c55e
 ```
-User Question
-     │
-     ▼
-┌─────────────────────────────────────────────────────────┐
-│  Supervisor    → routes work, reviews results           │
-│  Planner       → breaks objectives into tool-mapped steps│
-│  Executor      → runs tools (core + plugin + MCP + RAG) │
-│  Analyst       → analyzes results for insights          │
-└─────────────────────────────────────────────────────────┘
-         ↕               ↕               ↕
-┌──────────────┐ ┌──────────────┐ ┌──────────────┐
-│  Core Tools  │ │   Plugins    │ │  MCP Servers │
-│  GIS, DB,    │ │  @register   │ │  stdio, SSE  │
-│  Sensors,    │ │  _tool()     │ │  external    │
-│  External    │ │  custom.py   │ │  tools       │
-└──────────────┘ └──────────────┘ └──────────────┘
-                        │
-               ┌────────────────┐
-               │  RAG Knowledge │
-               │  Base (Chroma) │
-               │  Historical    │
-               │  reports       │
-               └────────────────┘
+
+### Tool Layer
+
+```mermaid
+graph LR
+    subgraph Core[Core Tools - 9]
+        G1[query_geojson]
+        G2[get_satellite_imagery]
+        G3[calculate_area]
+        DB1[query_postgres]
+        DB2[query_timeseries]
+        S1[get_telemetry]
+        S2[get_gps_data]
+        E1[weather_api]
+        E2[traffic_api]
+    end
+
+    subgraph Plugin[Plugin Tools - 9]
+        P1[process_drillhole_data]
+        P2[build_subsurface_surface]
+        P3[generate_block_model]
+        P4[extract_report_metadata]
+        P5[test_geological_hypothesis]
+        P6[calculate_volume]
+        P7[geocode_address]
+        P8[calculate_distance]
+        P9[noaa_tides]
+    end
+
+    subgraph MCP[MCP Tools - 7]
+        M1[read_file]
+        M2[write_file]
+        M3[list_directory]
+        M4[create_entities]
+        M5[search_nodes]
+        M6[reverse_geocode]
+        M7[find_nearby_pois]
+    end
+
+    subgraph RAG[RAG Tools - 3]
+        R1[rag_query]
+        R2[rag_ingest_text]
+        R3[rag_stats]
+    end
+
+    Executor --> Core
+    Executor --> Plugin
+    Executor --> MCP
+    Executor --> RAG
 ```
 
 ---
@@ -164,6 +213,136 @@ python -m uvicorn geo_agents.main:app --port 8084
 
 # Open dashboard
 # http://localhost:8084/
+```
+
+## Live Examples
+
+### Example 1: Full Agent Pipeline
+
+**Request:**
+```bash
+curl -X POST http://localhost:8084/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Check weather for drone flight at lat 40.71, lon -74.01"}'
+```
+
+**Response:**
+```json
+{
+  "response": "Weather conditions at the drone location (40.71, -74.01) are suitable for flight...",
+  "status": "complete",
+  "plan": [
+    "Get GPS location of drone asset",
+    "Check weather at drone coordinates",
+    "Assess flight safety based on wind and visibility"
+  ],
+  "tool_calls": [
+    {
+      "tool": "get_gps_data",
+      "args": {"asset_id": "asset-001"},
+      "result": {
+        "lat": 40.7128,
+        "lon": -74.006,
+        "altitude": 10.5,
+        "speed": 0.0,
+        "heading": 180.0
+      }
+    },
+    {
+      "tool": "weather_api",
+      "args": {"lat": 40.71, "lon": -74.01},
+      "result": {
+        "temperature": 18.5,
+        "humidity": 72,
+        "wind_speed": 12.3,
+        "wind_direction": "NW",
+        "conditions": "partly_cloudy",
+        "visibility_km": 10.0
+      }
+    }
+  ],
+  "iterations": 3
+}
+```
+
+### Example 2: Geological Plugin (Drillhole Processing)
+
+**Request:**
+```python
+from geo_agents.plugins.base import get_registered_plugins
+
+tools = {name: info.func for name, info in get_registered_plugins().items()}
+result = tools["process_drillhole_data"].invoke({
+    "collar_lat": 40.7128,
+    "collar_lon": -74.0060,
+    "collar_elev": 100,
+    "depth_from": 150,
+    "depth_to": 300,
+    "dip": -90,
+    "azimuth": 0
+})
+```
+
+**Response:**
+```json
+{
+  "hole_id": "DH-40712--74006",
+  "collar": {"lat": 40.7128, "lon": -74.006, "elev": 100},
+  "interval": {"from": 150, "to": 300, "length": 150},
+  "midpoint": {"lat": 40.7128, "lon": -74.006, "elev": -125.0},
+  "dip": -90,
+  "azimuth": 0
+}
+```
+
+### Example 3: RAG Knowledge Base
+
+**Ingest:**
+```bash
+curl -X POST http://localhost:8084/api/rag/ingest \
+  -H "Content-Type: application/json" \
+  -d '{"text": "The copper mineralization occurs at 150-300m depth. Grades: 0.3-1.2% Cu.", "source": "report.txt"}'
+```
+
+**Query:**
+```bash
+curl -X POST http://localhost:8084/api/rag/query \
+  -H "Content-Type: application/json" \
+  -d '{"query": "What are the copper grades?", "n_results": 3}'
+```
+
+**Response:**
+```json
+{
+  "answer": "[1] (source: report.txt, similarity: 0.60)\nThe copper mineralization occurs at 150-300m depth...",
+  "sources": [
+    {"source": "report.txt", "similarity": 0.601, "text_preview": "The copper mineralization..."},
+    {"source": "drill_report_2024.txt", "similarity": 0.473, "text_preview": "Historical drilling..."}
+  ],
+  "num_results": 3
+}
+```
+
+### Example 4: Plan Generation
+
+**Request:**
+```bash
+curl -X POST http://localhost:8084/api/demo/plan
+```
+
+**Response:**
+```json
+{
+  "demo": "plan_generation",
+  "objective": "Survey the copper deposit at ABC mine, check weather, and analyze drillhole data",
+  "plan": [
+    "Step 1: Use get_gps_data to obtain GPS coordinates of drillholes",
+    "Step 2: Use weather_api to check weather conditions at the mine",
+    "Step 3: Use query_postgres to retrieve historical drillhole data",
+    "Step 4: Use calculate_area to compute the survey area"
+  ],
+  "steps_count": 4
+}
 ```
 
 ## SDK Usage
@@ -207,6 +386,47 @@ skills = sdk.list_skills()    # 6 skills
 | GET /health | Health check |
 | GET /metrics | Request metrics |
 | GET / | Dashboard |
+
+## Dashboard
+
+The dashboard is available at `http://localhost:8084/` and includes:
+
+| Tab | Description |
+|-----|-------------|
+| **Overview** | System status, tools, skills, agents |
+| **Architecture** | Visual flow diagram of the agent pipeline |
+| **Extensions** | All plugins, skills, MCP servers, RAG |
+| **Live Demos** | 13 clickable demos with real API responses |
+| **Agent Chat** | Full pipeline with step-by-step visualization |
+| **API** | All endpoints + embedded Swagger UI |
+
+### Extension Loading Flow
+
+```mermaid
+graph TD
+    A[Server Startup] --> B[Scan plugins/ directory]
+    A --> C[Scan skills/ directory]
+    A --> D[Load mcp_servers.json]
+    A --> E[Initialize RAG]
+
+    B --> F[@register_tool decorated functions]
+    C --> G[YAML skill definitions]
+    D --> H[MCP server connections]
+    E --> I[ChromaDB vector store]
+
+    F --> J[Merged Tool Registry]
+    G --> J
+    H --> J
+    I --> J
+
+    J --> K[28 tools available]
+
+    style A fill:#1e3a5f,stroke:#38bdf8,color:#38bdf8
+    style J fill:#1e3a2f,stroke:#22c55e,color:#22c55e
+    style K fill:#052e16,stroke:#22c55e,color:#22c55e
+```
+
+---
 
 ## Extension System
 
