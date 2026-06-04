@@ -6,363 +6,167 @@ A LangGraph-based system where 4 specialized AI agents collaborate to process ge
 
 ---
 
-## Dashboard Preview
-
-```
-┌──────────────────────────────────────────────────────────────────────────┐
-│  Geo-Agents                    [Operational] [xiaomi/mimo-v2.5-pro]     │
-├──────────────────────────────────────────────────────────────────────────┤
-│  [Overview] [Architecture] [Extensions] [Live Demos] [Agent Chat] [API] │
-├──────────────────────────────────────────────────────────────────────────┤
-│                                                                          │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐       │
-│  │  Agents: 4  │ │ Tools: 28   │ │ Skills: 6   │ │ Tests: 59   │       │
-│  │  Supervisor │ │ Core + Plugin│ │ Pre-built   │ │ All passing │       │
-│  │  Planner    │ │ MCP + RAG   │ │ workflows   │ │             │       │
-│  │  Executor   │ │             │ │             │ │             │       │
-│  │  Analyst    │ │             │ │             │ │             │       │
-│  └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘       │
-│                                                                          │
-│  ┌────────────────────────────────────────────────────────────┐         │
-│  │  🏗️ Architecture Principles                                │         │
-│  │                                                            │         │
-│  │  The model proposes. The math proves.                      │         │
-│  │                                                            │         │
-│  │  • LLM suggests hypotheses                                │         │
-│  │  • Python computes geometry                               │         │
-│  │  • Never invents coordinates or grades                    │         │
-│  │  • Confidence scores on every output                      │         │
-│  └────────────────────────────────────────────────────────────┘         │
-│                                                                          │
-└──────────────────────────────────────────────────────────────────────────┘
-```
-
----
-
 ## What This Project Solves
 
 ### Problem 1: Manual Software Operation
 
-```
-BEFORE (Traditional Workflow):
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│   Open      │    │   Manually  │    │   Build     │    │   Export    │
-│   Software  │───▶│   Draw      │───▶│   Surfaces  │───▶│   Model     │
-│             │    │   Faults    │    │             │    │             │
-└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
-     2 hours           4 hours           3 hours           1 hour
-                        Total: 10+ hours
+Geologists spend weeks manually wireframing, building models, and operating complex software. Geo-Agents converts natural language descriptions into automated tool calls.
 
-AFTER (Geo-Agents):
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│   Type      │    │   Agents    │    │   Results   │
-│   "Build    │───▶│   Execute   │───▶│   Returned  │
-│   model"    │    │   Tools     │    │             │
-└─────────────┘    └─────────────┘    └─────────────┘
-    10 seconds        30 seconds         Instant
-                        Total: < 1 minute
-```
+**Before:** Geologist opens software → manually draws fault lines → builds surfaces → exports model
+**After:** Geologist types "Build subsurface model from drillhole data" → agents execute tools → results returned
+
+The Multi-Agent system (Planner → Executor → Analyst) transforms a geologist from a "software operator" back into an "interpreter."
 
 ### Problem 2: Hallucination in Geological AI
 
-```
-Traditional AI:
-┌─────────────┐         ┌─────────────┐
-│    LLM      │────────▶│  "Drill at  │
-│  (Creative) │         │  lat 40.71" │  ← INVENTED! No data supports this.
-└─────────────┘         └─────────────┘
+Most AI systems fail geology in one of two ways:
+- **Too creative** — The LLM invents coordinates, grades, or fault lines that don't exist in the data
+- **Too shallow** — Just RAG over documents, no actual computation
 
-Geo-Agents:
-┌─────────────┐         ┌─────────────┐         ┌─────────────┐
-│    LLM      │────────▶│   Python    │────────▶│  "Drill at  │
-│ (Reasoning) │         │   Tools     │         │  lat 40.71" │  ← COMPUTED from data.
-└─────────────┘         └─────────────┘         └─────────────┘
-  "Maybe near              Process drillhole        "Because 5
-   F1 fault?"              data, query DB           indicators agree"
-```
+Geo-Agents solves this with **separation of concerns**:
+
+| Layer | Responsibility | Example |
+|-------|---------------|---------|
+| **LLM (Reasoning)** | Suggest hypotheses | "Copper grades may improve at depth near F1 fault" |
+| **Python (Computation)** | Run deterministic calculations | Process drillhole coordinates, calculate areas, build surfaces |
+| **Validation** | Challenge hypotheses | Test against data, confidence scoring |
+
+**The model proposes. The math proves.**
+
+The LLM never generates coordinates. Python computes them. The LLM never invents grades. Tools return real data from databases and APIs.
 
 ### Problem 3: Slow Hypothesis Testing
 
-```
-Traditional:
-┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
-│  Submit  │    │   Wait   │    │  Review  │    │  Iterate │
-│  Request │───▶│  2 weeks │───▶│  Results │───▶│  (again) │
-└──────────┘    └──────────┘    └──────────┘    └──────────┘
+Testing a geological idea currently requires:
+1. Submit request to specialist queue
+2. Wait days/weeks for analysis
+3. Review results
+4. Iterate
 
-Geo-Agents:
-┌──────────┐    ┌──────────┐    ┌──────────┐
-│  Type    │    │  Agents  │    │  Results │
-│  Idea    │───▶│  Gather  │───▶│  with    │
-│          │    │  Data    │    │  Confidence│
-└──────────┘    └──────────┘    └──────────┘
-  10 seconds      30 seconds      Instant
+Geo-Agents reduces this to minutes:
+1. Geologist types hypothesis
+2. Agents gather data, run analysis, validate results
+3. Confidence-scored response returned
+4. Iterate immediately
+
+---
+
+## What Still Needs Work
+
+### Gap 1: Traceability and Explainability
+
+**Current state:** The system returns analysis results with sources.
+
+**What's missing:** A full citation engine that links every geological conclusion back to the specific page, paragraph, or data point in the source document.
+
+**Example of what's needed:**
 ```
+"Drill target at lat 40.7128, lon -74.0060"
+Evidence:
+  - Historical report (1998, page 12): "15m at 2.1% Cu from 180m depth"
+  - Geophysics (2020): "IP anomaly extends 800m along strike"
+  - Database: "DH-85-012 intersected mineralization at 180m"
+```
+
+**Why it matters:** Geologists are naturally skeptical. If the system draws a geological boundary, they will ask "Why here?" A black box will lose their trust immediately.
+
+### Gap 2: Geospatial Guardrails
+
+**Current state:** Tools return deterministic results.
+
+**What's missing:** A validation layer that checks if the LLM's geological interpretation is physically possible before rendering it in 3D.
+
+**Example of what could go wrong:**
+- Agent suggests a geological layer that intersects itself
+- Agent places a fault in a physically impossible orientation
+- Agent extrapolates mineralization beyond the data coverage
+
+**What's needed:** A Python validation layer that:
+1. Checks geometric consistency
+2. Validates against physical constraints
+3. Blocks impossible outputs
+4. Returns error to the agent for self-correction
+
+**Why it matters:** An impossible geological model displayed in Cesium will destroy user trust permanently.
+
+### Gap 3: Vanilla RAG Limitations
+
+**Current state:** RAG uses vector similarity search over text chunks.
+
+**What's missing:** The current RAG will fail with historical mining reports because:
+- "Gold vein" on page 5 may not be semantically similar to "50m depth" on page 12
+- Chunking breaks apart related geological context
+- Vector search doesn't understand geological relationships
+
+**What's needed:** Upgrade from vanilla RAG to:
+1. **Graph RAG** — Extract entities (rock types, faults, mineralization, depths) and store relationships
+2. **Structured extraction** — Convert unstructured reports into structured geological entities
+3. **PostGIS integration** — Store extracted coordinates in a spatial database
+4. **Entity linking** — Connect "F1 fault" mentioned in 5 different reports
+
+**Example transformation:**
+```
+Input:  "The F1 fault controls copper mineralization at 150-300m depth"
+Output: {
+  entity: "F1 fault",
+  type: "structural_control",
+  commodity: "copper",
+  depth_range: [150, 300],
+  source: "report_2004.pdf, page 12"
+}
+```
+
+**Why it matters:** Storing text chunks retrieves paragraphs. Storing geological entities retrieves facts.
 
 ---
 
 ## Architecture
 
-### Agent Flow
-
 ```
-User: "Where should I drill next?"
-         │
-         ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                        SUPERVISOR                                │
-│              Routes work · Reviews results · Validates          │
-└──────┬─────────────────────────────────────────────────────┬────┘
-       │                                                     │
-       ▼                                                     ▼
-┌──────────────┐                                  ┌──────────────┐
-│   PLANNER    │                                  │    END       │
-│  Decompose   │                                  │  (Approve)   │
-│  into steps  │                                  └──────────────┘
-└──────┬───────┘
-       │
-       ▼
-┌──────────────────────────────────────────────────────────────┐
-│                       EXECUTOR                                │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐       │
-│  │Core Tools│ │ Plugins  │ │   MCP    │ │   RAG    │       │
-│  │ 9 tools  │ │ 9 tools  │ │ 7 tools  │ │ Knowledge│       │
-│  └──────────┘ └──────────┘ └──────────┘ └──────────┘       │
-│         ▲                                                   │
-│         │ invoke                                            │
-│         └───────────────────────────────────────────────────│
-└──────┬──────────────────────────────────────────────────────┘
-       │
-       ▼
-┌──────────────┐
-│   ANALYST    │
-│  Find risks  │───────▶ Confidence: 0.78
-│  Patterns    │         "Drill at F1 × IP anomaly"
-└──────┬───────┘
-       │
-       ▼
-┌──────────────┐
-│  SUPERVISOR  │───────▶ VALIDATE ───────▶ Return to user
-└──────────────┘
-```
-
-### Tool Layer
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    MERGED TOOL REGISTRY                      │
-│                                                             │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │
-│  │  CORE (9)   │  │ PLUGIN (9)  │  │   MCP (7)   │        │
-│  │             │  │             │  │             │        │
-│  │ query_geo   │  │ drillhole   │  │ read_file   │        │
-│  │ satellite   │  │ subsurface  │  │ write_file  │        │
-│  │ area_calc   │  │ block_model │  │ list_dir    │        │
-│  │ postgres    │  │ hypothesis  │  │ search      │        │
-│  │ timeseries  │  │ geocode     │  │ geocode     │        │
-│  │ telemetry   │  │ distance    │  │ entities    │        │
-│  │ gps_data    │  │ tides       │  │ pois        │        │
-│  │ weather     │  │ report_nlp  │  │             │        │
-│  │ traffic     │  │ volume      │  │             │        │
-│  └─────────────┘  └─────────────┘  └─────────────┘        │
-│                                                             │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │  RAG (3) — ChromaDB + sentence-transformers         │   │
-│  │  rag_query · rag_ingest_text · rag_stats            │   │
-│  └─────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
+User Question
+     │
+     ▼
+┌─────────────────────────────────────────────────────────┐
+│  Supervisor    → routes work, reviews results           │
+│  Planner       → breaks objectives into tool-mapped steps│
+│  Executor      → runs tools (core + plugin + MCP + RAG) │
+│  Analyst       → analyzes results for insights          │
+└─────────────────────────────────────────────────────────┘
+         ↕               ↕               ↕
+┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+│  Core Tools  │ │   Plugins    │ │  MCP Servers │
+│  GIS, DB,    │ │  @register   │ │  stdio, SSE  │
+│  Sensors,    │ │  _tool()     │ │  external    │
+│  External    │ │  custom.py   │ │  tools       │
+└──────────────┘ └──────────────┘ └──────────────┘
+                        │
+               ┌────────────────┐
+               │  RAG Knowledge │
+               │  Base (Chroma) │
+               │  Historical    │
+               │  reports       │
+               └────────────────┘
 ```
 
 ---
 
-## Live Example: Full Pipeline
-
-### Request
+## Quick Start
 
 ```bash
-curl -X POST http://localhost:8084/api/chat \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Check weather for drone flight at lat 40.71, lon -74.01"}'
+# Install
+pip install -e ".[dev]"
+
+# Run tests (59 passing)
+pytest tests/ -v
+
+# Start server
+python -m uvicorn geo_agents.main:app --port 8084
+
+# Open dashboard
+# http://localhost:8084/
 ```
-
-### Response
-
-```json
-{
-  "response": "Weather conditions at the drone location (40.71, -74.01) show...",
-  "status": "complete",
-  "plan": [
-    "Get GPS location of drone asset",
-    "Check weather at drone coordinates",
-    "Assess flight safety based on wind and visibility"
-  ],
-  "tool_calls": [
-    {
-      "tool": "get_gps_data",
-      "args": {"asset_id": "asset-001"},
-      "result": {
-        "lat": 40.7128,
-        "lon": -74.006,
-        "altitude": 10.5,
-        "speed": 0.0,
-        "heading": 180.0
-      }
-    },
-    {
-      "tool": "weather_api",
-      "args": {"lat": 40.71, "lon": -74.01},
-      "result": {
-        "temperature": 18.5,
-        "humidity": 72,
-        "wind_speed": 12.3,
-        "wind_direction": "NW",
-        "conditions": "partly_cloudy",
-        "visibility_km": 10.0,
-        "forecast": "Clear skies expected in the next 6 hours"
-      }
-    }
-  ],
-  "analysis": {
-    "summary": "Weather conditions are suitable for drone flight...",
-    "patterns": ["Wind speed below threshold", "Good visibility"],
-    "risks": ["Humidity slightly high"],
-    "recommendations": ["Proceed with flight planning"],
-    "confidence": 0.85
-  },
-  "iterations": 3
-}
-```
-
----
-
-## Live Example: Geological Plugin
-
-### Drillhole Processing
-
-```python
-from geo_agents.plugins.base import get_registered_plugins
-
-tools = {name: info.func for name, info in get_registered_plugins().items()}
-result = tools["process_drillhole_data"].invoke({
-    "collar_lat": 40.7128,
-    "collar_lon": -74.0060,
-    "collar_elev": 100,
-    "depth_from": 150,
-    "depth_to": 300,
-    "dip": -90,
-    "azimuth": 0
-})
-```
-
-### Output
-
-```json
-{
-  "hole_id": "DH-40712--74006",
-  "collar": {
-    "lat": 40.7128,
-    "lon": -74.006,
-    "elev": 100
-  },
-  "interval": {
-    "from": 150,
-    "to": 300,
-    "length": 150
-  },
-  "midpoint": {
-    "lat": 40.7128,
-    "lon": -74.006,
-    "elev": -125.0
-  },
-  "dip": -90,
-  "azimuth": 0
-}
-```
-
----
-
-## Live Example: RAG Knowledge Base
-
-### Ingest Historical Report
-
-```bash
-curl -X POST http://localhost:8084/api/rag/ingest \
-  -H "Content-Type: application/json" \
-  -d '{
-    "text": "The copper mineralization at the ABC deposit occurs at depths between 150-300m. Grades range from 0.3% to 1.2% Cu. The F1 fault system controls the mineralization.",
-    "source": "drill_report_2024.txt"
-  }'
-```
-
-### Response
-
-```json
-{
-  "chunks_created": 1,
-  "source": "drill_report_2024.txt",
-  "status": "ingested"
-}
-```
-
-### Query
-
-```bash
-curl -X POST http://localhost:8084/api/rag/query \
-  -H "Content-Type: application/json" \
-  -d '{"query": "What are the copper grades at depth?", "n_results": 3}'
-```
-
-### Response
-
-```json
-{
-  "answer": "[1] (source: drill_report_2024.txt, similarity: 0.60)\nThe copper mineralization occurs at depths between 150-300m...",
-  "sources": [
-    {
-      "source": "drill_report_2024.txt",
-      "similarity": 0.601,
-      "text_preview": "The copper mineralization at the ABC deposit..."
-    },
-    {
-      "source": "geological_survey_1985.txt",
-      "similarity": 0.473,
-      "text_preview": "Historical drilling intersected 15m at 2.1% Cu..."
-    }
-  ],
-  "query": "What are the copper grades at depth?",
-  "num_results": 3
-}
-```
-
----
-
-## Live Example: Plan Generation
-
-```bash
-curl -X POST http://localhost:8084/api/demo/plan
-```
-
-### Response
-
-```json
-{
-  "demo": "plan_generation",
-  "objective": "Survey the copper deposit at ABC mine, check weather, and analyze drillhole data",
-  "plan": [
-    "Step 1: Use get_gps_data to obtain GPS coordinates of drillholes at ABC mine",
-    "Step 2: Use weather_api to check weather conditions at the mine site",
-    "Step 3: Use query_postgres to retrieve historical drillhole assay data",
-    "Step 4: Use calculate_area to compute the survey area coverage"
-  ],
-  "steps_count": 4
-}
-```
-
----
 
 ## SDK Usage
-
-### Basic Usage
 
 ```python
 from geo_agents import GeoAgentsSDK
@@ -374,219 +178,104 @@ result = await sdk.run("Check weather for drone flight")
 print(result.response)
 print(result.plan)
 print(result.tool_calls)
-```
 
-### Plan Only
-
-```python
+# Plan only
 plan = await sdk.plan("Survey the mining site")
-# Returns: ["Step 1: Get GPS...", "Step 2: Query database...", ...]
-```
 
-### Analyze Data
+# Analyze data
+analysis = await sdk.analyze("Temperature readings")
 
-```python
-analysis = await sdk.analyze("Temperature readings from sensor-001")
-# Returns: {"summary": "...", "patterns": [...], "risks": [...]}
-```
-
-### Run Specific Skill
-
-```python
-result = await sdk.run_skill("weather_planning", "Check conditions for all drones")
-```
-
-### List Tools and Skills
-
-```python
+# List tools/skills
 tools = sdk.list_tools()      # 28 tools
 skills = sdk.list_skills()    # 6 skills
 ```
 
----
+## API Endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| POST /api/chat | Full agent pipeline |
+| POST /api/plan | Generate plan only |
+| POST /api/analyze | Analyze data |
+| GET /api/tools | List all tools |
+| GET /api/skills | List all skills |
+| GET /api/plugins | List plugins |
+| GET /api/mcp | List MCP servers |
+| GET /api/rag/stats | RAG knowledge base |
+| POST /api/rag/ingest | Add documents |
+| POST /api/rag/query | Search documents |
+| GET /health | Health check |
+| GET /metrics | Request metrics |
+| GET / | Dashboard |
 
 ## Extension System
 
-### Add a Plugin
-
-Drop a `.py` file in `plugins/`:
+### Add a Plugin (drop .py in plugins/)
 
 ```python
-# plugins/my_geology_tool.py
 from geo_agents.plugins.base import register_tool
 
-@register_tool(name="analyze_core_sample", description="Analyze drill core sample data", category="Geology")
-def analyze_core_sample(depth_from: float, depth_to: float, rock_type: str) -> dict:
-    """Analyze core sample and return lithological description."""
-    # Deterministic computation — not LLM
-    return {
-        "depth_from": depth_from,
-        "depth_to": depth_to,
-        "rock_type": rock_type,
-        "description": f"Core sample from {depth_from}m to {depth_to}m: {rock_type}",
-        "confidence": 0.95
-    }
+@register_tool(name="my_tool", description="Does X", category="Custom")
+def my_tool(param: str) -> dict:
+    return {"result": param}
 ```
 
-### Add a Skill
-
-Drop a `.yaml` file in `skills/`:
+### Add a Skill (drop .yaml in skills/)
 
 ```yaml
-# skills/drill_targeting.yaml
-name: drill_targeting
-description: Identify optimal drill targets based on geological data
-category: Geology
-tools:
-  - query_geojson
-  - query_postgres
-  - process_drillhole_data
-  - test_geological_hypothesis
+name: my_skill
+description: Does something useful
+tools: [weather_api, get_gps_data]
 system_prompt: |
-  You are a drill targeting specialist.
-  Analyze geological data to identify the best drill targets.
-  Consider: structural controls, grade trends, geophysical anomalies.
-  Always provide confidence scores and evidence.
+  You are a specialist in...
 steps:
-  - Query geological fault data from GIS layers
-  - Retrieve historical drillhole assay results
-  - Process drillhole coordinates to 3D
-  - Test hypothesis about structural controls
-  - Rank targets by confidence and evidence
+  - Step 1
+  - Step 2
 ```
 
-### Add an MCP Server
-
-Edit `mcp_servers.json`:
+### Add an MCP Server (edit mcp_servers.json)
 
 ```json
 {
-  "servers": [
-    {
-      "name": "my-geo-server",
-      "transport": "stdio",
-      "command": "npx",
-      "args": ["-y", "@my/geo-mcp-server"],
-      "tools": [
-        {
-          "name": "reverse_geocode",
-          "description": "Convert lat/lon to address",
-          "input_schema": {
-            "type": "object",
-            "properties": {
-              "lat": {"type": "number"},
-              "lon": {"type": "number"}
-            }
-          }
-        }
-      ]
-    }
-  ]
+  "name": "my-server",
+  "transport": "stdio",
+  "command": "npx",
+  "args": ["-y", "@my/mcp-server"],
+  "tools": [{"name": "tool1", "description": "..."}]
 }
 ```
 
----
+### Add RAG (ingest documents)
 
-## API Endpoints
+```python
+from geo_agents.rag import RAGEngine
 
-### Agent Pipeline
+rag = RAGEngine()
+rag.ingest_text("Copper grades range from 0.3% to 1.2%...", source="report.txt")
+rag.ingest_file("drill_report.pdf")
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/chat` | Full agent pipeline with LLM |
-| POST | `/api/mission` | Alias for /chat |
-| POST | `/api/plan` | Generate plan only |
-| POST | `/api/analyze` | Run analyst only |
-
-### Tools & Extensions
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/tools` | List all 28 tools |
-| GET | `/api/plugins` | List 9 plugins |
-| GET | `/api/skills` | List 6 skills |
-| GET | `/api/mcp` | List MCP servers |
-| GET | `/api/extensions` | All extensions summary |
-
-### RAG
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/rag/stats` | Knowledge base statistics |
-| POST | `/api/rag/ingest` | Add documents |
-| POST | `/api/rag/query` | Search documents |
-| POST | `/api/rag/clear` | Clear knowledge base |
-
-### System
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/health` | Health check |
-| GET | `/metrics` | Request metrics |
-| GET | `/api/status` | System status |
-| GET | `/api/providers` | LLM providers |
-| POST | `/api/providers/{name}` | Switch provider |
-| GET | `/` | Dashboard |
-
-### Live Demos
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/demo/weather-check` | Weather at drone locations |
-| POST | `/api/demo/fleet-status` | GPS + telemetry |
-| POST | `/api/demo/spatial-query` | GIS + area calculation |
-| POST | `/api/demo/plan` | Plan generation |
-| POST | `/api/demo/analyze` | Data analysis |
-| POST | `/api/demo/skill-run` | Skill execution |
-| POST | `/api/demo/rag-ingest` | RAG ingest |
-| POST | `/api/demo/rag-query` | RAG query |
-| POST | `/api/demo/tools-list` | Tools inventory |
-| POST | `/api/demo/plugins-reload` | Hot-reload plugins |
-| POST | `/api/demo/database-query` | Database query |
-| POST | `/api/demo/sensor-telemetry` | Sensor telemetry |
-
----
+result = rag.query("What are the copper grades?")
+```
 
 ## Current Extensions
 
-### Tools (28 total)
-
-| Category | Count | Tools |
-|----------|-------|-------|
-| GIS | 5 | query_geojson, get_satellite_imagery, calculate_area, geocode_address, calculate_distance |
-| Database | 2 | query_postgres, query_timeseries |
-| Sensors | 2 | get_telemetry, get_gps_data |
-| External | 3 | weather_api, traffic_api, noaa_tides |
-| Geology | 6 | process_drillhole_data, build_subsurface_surface, generate_block_model, extract_report_metadata, test_geological_hypothesis, calculate_volume |
-| MCP | 7 | read_file, write_file, list_directory, create_entities, search_nodes, reverse_geocode, find_nearby_pois |
-| RAG | 3 | rag_query, rag_ingest_text, rag_stats |
-
-### Skills (6 total)
-
-| Skill | Category | Description |
-|-------|----------|-------------|
-| weather_planning | Operations | Check weather for drone flight safety |
-| fleet_monitoring | Operations | Monitor all tracked assets |
-| spatial_analysis | GIS | GIS spatial analysis |
-| subsurface_modeling | Geology | Build subsurface models from drillhole data |
-| hypothesis_testing | Geology | Test geological hypotheses |
-| report_ingestion | Data | Ingest historical reports |
-
----
+| Type | Count | Examples |
+|------|-------|---------|
+| Core Tools | 9 | GIS, Database, Sensors, External |
+| Plugins | 9 | Geology (drillhole, block model, hypothesis) |
+| Skills | 6 | Weather planning, fleet monitoring, subsurface modeling |
+| MCP Servers | 3 | Filesystem, memory, geo-mcp |
+| RAG Tools | 3 | Query, ingest, stats |
+| **Total** | **28 tools** | |
 
 ## Tech Stack
 
-| Component | Technology | Purpose |
-|-----------|-----------|---------|
-| Agent Framework | LangGraph | Multi-agent orchestration |
-| Tool Framework | LangChain | Tool abstraction and binding |
-| API Server | FastAPI | REST API + WebSocket |
-| Vector Store | ChromaDB | RAG knowledge base |
-| Embeddings | sentence-transformers | Document embedding |
-| LLM Providers | Xiaomi MiMo, Ollama, OpenRouter | Multi-provider support |
-| Testing | pytest (async) | 59 tests |
-
----
+- Python 3.11+
+- LangGraph (agent orchestration)
+- LangChain (tool abstraction)
+- FastAPI (API server)
+- ChromaDB (vector storage)
+- sentence-transformers (embeddings)
 
 ## Project Structure
 
@@ -594,76 +283,26 @@ Edit `mcp_servers.json`:
 geo-agents/
 ├── src/geo_agents/
 │   ├── __init__.py          # SDK exports
-│   ├── client.py            # GeoAgentsSDK class
-│   ├── config.py            # Multi-provider configuration
-│   ├── state.py             # AgentState TypedDict
+│   ├── client.py            # GeoAgentsSDK
+│   ├── config.py            # Multi-provider config
+│   ├── state.py             # AgentState
 │   ├── graph.py             # LangGraph construction
-│   ├── exceptions.py        # Custom error types
-│   ├── main.py              # FastAPI server + middleware
-│   ├── agents/
-│   │   ├── supervisor.py    # Route & review
-│   │   ├── planner.py       # Decompose objectives
-│   │   ├── executor.py      # Run tools
-│   │   └── analyst.py       # Analyze results
-│   ├── tools/
-│   │   ├── registry.py      # Merge all tool sources
-│   │   ├── gis.py           # GIS tools
-│   │   ├── database.py      # Database tools
-│   │   ├── sensors.py       # Sensor tools
-│   │   └── external.py      # External API tools
-│   ├── plugins/
-│   │   ├── base.py          # @register_tool decorator
-│   │   └── loader.py        # Dynamic discovery
-│   ├── skills/
-│   │   └── loader.py        # YAML skill loading
-│   ├── mcp/
-│   │   └── client.py        # MCP server integration
-│   ├── rag/
-│   │   ├── engine.py        # RAG engine
-│   │   ├── chunker.py       # Document chunking
-│   │   └── store.py         # ChromaDB vector store
-│   └── api/
-│       ├── routes.py        # REST endpoints
-│       └── websocket.py     # WebSocket manager
-├── plugins/                 # User plugins (auto-discovered)
-│   ├── example_plugin.py    # Example: geocode, distance, tides
-│   └── geology_plugin.py    # Geological tools
-├── skills/                  # Skill definitions (YAML)
-│   ├── weather_planning.yaml
-│   ├── fleet_monitoring.yaml
-│   ├── spatial_analysis.yaml
-│   ├── subsurface_modeling.yaml
-│   ├── hypothesis_testing.yaml
-│   └── report_ingestion.yaml
-├── mcp_servers.json         # MCP server configuration
-├── dashboard.html           # Web dashboard
-├── demo.py                  # Demo script
+│   ├── exceptions.py        # Custom errors
+│   ├── main.py              # FastAPI server
+│   ├── agents/              # 4 agent nodes
+│   ├── tools/               # Core + registry
+│   ├── plugins/             # Plugin system
+│   ├── skills/              # Skill system
+│   ├── mcp/                 # MCP integration
+│   ├── rag/                 # RAG engine
+│   └── api/                 # Routes + WebSocket
+├── plugins/                 # User plugins
+├── skills/                  # Skill definitions
+├── mcp_servers.json         # MCP config
+├── dashboard.html           # Web UI
 ├── tests/                   # 59 tests
-├── pyproject.toml           # Project config
-├── README.md                # This file
-├── REPORT.md                # Technical report
-├── PITCH.md                 # CTO talking points
-└── EXECUTIVE_SUMMARY.md     # One-page summary
+└── pyproject.toml
 ```
-
----
-
-## What Still Needs Work
-
-### Gap 1: Traceability
-
-**Current:** Returns analysis with sources.
-**Needed:** Citation engine linking conclusions to specific report pages.
-
-### Gap 2: Geospatial Guardrails
-
-**Current:** Tools return deterministic results.
-**Needed:** Validation layer blocking physically impossible models.
-
-### Gap 3: Vanilla RAG Limitations
-
-**Current:** Vector similarity search over text chunks.
-**Needed:** Graph RAG with entity extraction and PostGIS integration.
 
 ---
 
