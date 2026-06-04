@@ -1,0 +1,121 @@
+{
+  "servers": [
+    {
+      "name": "filesystem",
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "."],
+      "enabled": false,
+      "tools": [
+        {
+          "name": "read_file",
+          "description": "Read the contents of a file",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "path": {"type": "string", "description": "File path to read"}
+            },
+            "required": ["path"]
+          }
+        },
+        {
+          "name": "write_file",
+          "description": "Write content to a file",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "path": {"type": "string", "description": "File path to write"},
+              "content": {"type": "string", "description": "Content to write"}
+            },
+            "required": ["path", "content"]
+          }
+        },
+        {
+          "name": "list_directory",
+          "description": "List files in a directory",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "path": {"type": "string", "description": "Directory path"}
+            },
+            "required": ["path"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "memory",
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"],
+      "enabled": false,
+      "tools": [
+        {
+          "name": "create_entities",
+          "description": "Create new entities in the knowledge graph",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "entities": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {"type": "string"},
+                    "entityType": {"type": "string"},
+                    "observations": {"type": "array", "items": {"type": "string"}}
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "search_nodes",
+          "description": "Search for nodes in the knowledge graph",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "query": {"type": "string", "description": "Search query"}
+            },
+            "required": ["query"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "geo-mcp-example",
+      "transport": "sse",
+      "url": "http://localhost:3001/sse",
+      "enabled": false,
+      "tools": [
+        {
+          "name": "reverse_geocode",
+          "description": "Convert lat/lon coordinates to a street address",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "lat": {"type": "number", "description": "Latitude"},
+              "lon": {"type": "number", "description": "Longitude"}
+            },
+            "required": ["lat", "lon"]
+          }
+        },
+        {
+          "name": "find_nearby_pois",
+          "description": "Find points of interest near a location",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "lat": {"type": "number"},
+              "lon": {"type": "number"},
+              "radius_m": {"type": "number", "description": "Search radius in meters"},
+              "category": {"type": "string", "description": "POI category (restaurant, hospital, etc.)"}
+            },
+            "required": ["lat", "lon"]
+          }
+        }
+      ]
+    }
+  ]
+}

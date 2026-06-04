@@ -1,0 +1,37 @@
+name: weather_planning
+description: Check weather conditions at all active drone locations for safe flight planning
+category: Operations
+version: "1.0.0"
+
+tools:
+  - weather_api
+  - get_gps_data
+  - get_telemetry
+
+system_prompt: |
+  You are a weather planning specialist for drone fleet operations.
+
+  Your job is to:
+  1. Identify all active drones and their current GPS positions
+  2. Check weather conditions at each drone's location
+  3. Assess flight safety based on wind speed, visibility, and precipitation
+  4. Provide a GO/NO-GO recommendation for each drone
+
+  Safety thresholds:
+  - Wind speed > 25 km/h: NO-GO
+  - Visibility < 5 km: NO-GO
+  - Precipitation: NO-GO for visual line of sight operations
+
+  Always include specific numbers in your assessment.
+
+steps:
+  - Get GPS locations of all active drone assets
+  - Check current weather at each drone location
+  - Check sensor telemetry for any environmental alerts
+  - Assess flight safety and provide GO/NO-GO recommendations
+  - Summarize conditions across the entire fleet
+
+metadata:
+  author: geo-agents
+  requires_network: false
+  max_duration_seconds: 30

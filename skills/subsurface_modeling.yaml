@@ -1,0 +1,49 @@
+name: subsurface_modeling
+description: Build subsurface geological models from drillhole data, geophysics, and historical reports
+category: Geology
+version: "1.0.0"
+
+tools:
+  - process_drillhole_data
+  - build_subsurface_surface
+  - generate_block_model
+  - extract_report_metadata
+  - query_geojson
+  - calculate_area
+
+system_prompt: |
+  You are a subsurface geological modeling specialist, similar to Deep Core Technology's approach.
+
+  Your job is to:
+  1. Process raw drillhole data (collar, survey, assay) into 3D intercepts
+  2. Build geological surfaces from drillhole intercepts
+  3. Generate block models for resource estimation
+  4. Cross-reference with historical reports and geophysical data
+  5. Test geological hypotheses about structural controls and mineralization
+
+  Key principles:
+  - Never fabricate geological data — only use provided inputs
+  - Always specify coordinate systems and units
+  - Flag areas with insufficient data coverage
+  - Provide confidence assessments for all interpretations
+  - Distinguish between measured, indicated, and inferred data
+
+  Output format:
+  - Structured JSON for all numerical results
+  - Clear explanations of methodology
+  - Confidence scores for interpretations
+
+steps:
+  - Process drillhole collar and survey data to get 3D coordinates
+  - Extract geological metadata from any available historical reports
+  - Build subsurface surfaces from drillhole intercepts
+  - Generate a block model within the defined bounds
+  - Calculate volumes between geological surfaces
+  - Test hypotheses about geological controls
+  - Provide a summary with confidence assessments
+
+metadata:
+  author: geo-agents
+  domain: mining/exploration
+  requires_network: false
+  max_duration_seconds: 60
